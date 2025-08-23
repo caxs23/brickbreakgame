@@ -22,7 +22,7 @@
       border: 2px solid #fff;
       background-color: #000;
       max-width: 100%;
-      max-height: 90vh; /* Increased to use more vertical space on mobile */
+      max-height: 90vh;
       display: block;
       width: 100%;
       height: auto;
@@ -55,7 +55,7 @@
       border: none;
       border-radius: 5px;
       color: white;
-      touch-action: manipulation; /* Ensure buttons respond to touch */
+      touch-action: manipulation;
     }
     button:hover {
       background-color: #45a049;
@@ -64,7 +64,7 @@
       canvas {
         width: 100%;
         height: auto;
-        aspect-ratio: 9 / 16; /* Changed to 9:16 for mobile-friendly portrait orientation */
+        aspect-ratio: 9 / 16;
       }
     }
   </style>
@@ -117,15 +117,16 @@
     let lives = 3;
     let isPaused = false;
     let isGameOver = false;
+    let isGameWon = false;
     let powerUp = null;
     let powerUpTimer = null;
     let lastTime = performance.now();
 
     // Canvas size
     function resizeCanvas() {
-      const aspectRatio = window.innerWidth <= 600 ? 9 / 16 : 4 / 3; // 9:16 for mobile, 4:3 for desktop
-      const maxWidth = Math.min(window.innerWidth * 0.95, 800); // Slightly more width usage
-      const maxHeight = Math.min(window.innerHeight * 0.85, 600); // Adjusted for better mobile fit
+      const aspectRatio = window.innerWidth <= 600 ? 9 / 16 : 4 / 3;
+      const maxWidth = Math.min(window.innerWidth * 0.95, 800);
+      const maxHeight = Math.min(window.innerHeight * (window.innerWidth <= 600 ? 0.75 : 0.85), 600);
       canvas.width = maxWidth;
       canvas.height = maxWidth / aspectRatio;
       if (canvas.height > maxHeight) {
@@ -134,8 +135,7 @@
       }
       brickOffsetLeft = (canvas.width - (brickColumnCount * (brickWidth + brickPadding) - brickPadding)) / 2;
       paddle.x = canvas.width / 2 - paddle.width / 2;
-      paddle.y = canvas.height - 20;
-      // Scale game elements for canvas size
+      paddle.y = canvas.height - (window.innerWidth <= 600 ? 40 : 20);
       brickWidth = canvas.width / 10;
       brickHeight = canvas.height / 30;
       brickPadding = canvas.width / 80;
@@ -143,7 +143,7 @@
       paddle.width = canvas.width / 6.67;
       paddle.defaultWidth = paddle.width;
       paddle.height = canvas.height / 60;
-      paddle.speed = canvas.width / 60; // Increased speed for better mobile control
+      paddle.speed = canvas.width / 60;
       balls.forEach(ball => {
         ball.radius = canvas.width / 80;
         ball.x = Math.min(ball.x, canvas.width - ball.radius);
@@ -163,7 +163,7 @@
       e.preventDefault();
       const newTouchX = e.touches[0].clientX;
       const deltaX = newTouchX - touchX;
-      paddle.x += deltaX * (window.innerWidth < 600 ? 0.7 : 0.12); // Further increased sensitivity for mobile
+      paddle.x += deltaX * (window.innerWidth < 600 ? 0.7 : 0.12);
       touchX = newTouchX;
       paddle.x = Math.max(0, Math.min(canvas.width - paddle.width, paddle.x));
     });
@@ -247,14 +247,25 @@
       drawPaddle();
       drawPowerUp();
       ballCountDisplay.textContent = balls.length;
+      if (isGameWon) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#fff';
+        ctx.font = `${canvas.width / 26.67}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.fillText('승리!', canvas.width / 2, canvas.height / 2);
+        ctx.fillText(`최종 점수: ${score}`, canvas.width / 2, canvas.height / 2 + canvas.width / 20);
+      }
     }
 
     // Collision detection for a single ball
     function collisionDetection(ball, ballIndex) {
+      let remainingBricks = 0;
       for (let c = 0; c < brickColumnCount; c++) {
         for (let r = 0; r < brickRowCount; r++) {
           const b = bricks[c][r];
           if (b.status === 1) {
+            remainingBricks++;
             const closestX = Math.max(b.x, Math.min(ball.x, b.x + brickWidth));
             const closestY = Math.max(b.y, Math.min(ball.y, b.y + brickHeight));
             const distanceX = ball.x - closestX;
@@ -282,12 +293,16 @@
                   dy: canvas.height / 300
                 };
               }
-              if (score === brickRowCount * brickColumnCount * 10 * level) {
-                levelUp();
-              }
-              return;
+              remainingBricks--;
             }
           }
+        }
+      }
+      if (remainingBricks === 0) {
+        if (level === 5) {
+          gameWon();
+        } else {
+          levelUp();
         }
       }
     }
@@ -376,14 +391,19 @@
           ball.dy = -8 * (level / 2 + 1) * canvas.width / 800;
           playSound('brickHit');
           if (balls.length < maxBalls) {
-            const newBall = {
-              x: ball.x,
-              y: ball.y,
-              dx: -ball.dx * 0.8 + (Math.random() * 2 - 1) * canvas.width / 800,
-              dy: ball.dy * 0.8 + (Math.random() * 2 - 1) * canvas.width / 800,
-              radius: ball.radius
-            };
-            balls.push(newBall);
+            const ballsToAdd = Math.min(level + 1, maxBalls - balls.length + 1);
+            for (let j = 0; j < ballsToAdd - 1; j++) {
+              if (balls.length < maxBalls) {
+                const newBall = {
+                  x: ball.x,
+                  y: ball.y,
+                  dx: -ball.dx * 0.8 + (Math.random() * 2 - 1) * canvas.width / 800,
+                  dy: ball.dy * 0.8 + (Math.random() * 2 - 1) * canvas.width / 800,
+                  radius: ball.radius
+                };
+                balls.push(newBall);
+              }
+            }
           }
         }
         if (ball.y + ball.radius > canvas.height) {
@@ -412,7 +432,7 @@
     }
 
     function levelUp() {
-      level++;
+      level = Math.min(level + 1, 5);
       levelDisplay.textContent = level;
       brickRowCount = Math.min(brickRowCount + 1, 8);
       resetBalls();
@@ -446,12 +466,19 @@
       pauseMenu.style.display = 'block';
     }
 
+    function gameWon() {
+      isGameWon = true;
+      pauseMenu.style.display = 'block';
+    }
+
     function togglePause() {
+      if (isGameWon) return;
       isPaused = !isPaused;
       pauseMenu.style.display = isPaused ? 'block' : 'none';
     }
 
     function resumeGame() {
+      if (isGameWon) return;
       isPaused = false;
       pauseMenu.style.display = 'none';
       lastTime = performance.now();
@@ -466,6 +493,7 @@
       levelDisplay.textContent = level;
       livesDisplay.textContent = lives;
       isGameOver = false;
+      isGameWon = false;
       isPaused = false;
       pauseMenu.style.display = 'none';
       brickRowCount = 5;
@@ -480,7 +508,7 @@
 
     // Game loop
     function gameLoop() {
-      if (!isPaused && !isGameOver) {
+      if (!isPaused && !isGameOver && !isGameWon) {
         const currentTime = performance.now();
         const deltaTime = (currentTime - lastTime) / 1000;
         lastTime = currentTime;
@@ -491,6 +519,8 @@
         balls.forEach((ball, index) => collisionDetection(ball, index));
         draw();
         requestAnimationFrame(gameLoop);
+      } else {
+        draw();
       }
     }
 
