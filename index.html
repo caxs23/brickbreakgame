@@ -24,14 +24,12 @@
       max-width: 100%;
       max-height: 80vh;
       display: block;
-      width: 100%;
-      height: auto;
     }
     #ui {
       color: #fff;
       text-align: center;
       margin-bottom: 10px;
-      font-size: clamp(0.8em, 4vw, 1.2em);
+      font-size: 1.2em;
     }
     #pauseMenu {
       position: absolute;
@@ -44,12 +42,11 @@
       color: #fff;
       text-align: center;
       display: none;
-      font-size: clamp(0.8em, 3vw, 1em);
     }
     button {
       padding: 10px 20px;
       margin: 10px;
-      font-size: clamp(0.8em, 3vw, 1em);
+      font-size: 1em;
       cursor: pointer;
       background-color: #4CAF50;
       border: none;
@@ -60,10 +57,12 @@
       background-color: #45a049;
     }
     @media (max-width: 600px) {
+      #ui {
+        font-size: 1em;
+      }
       canvas {
         width: 100%;
         height: auto;
-        aspect-ratio: 4 / 3; /* Maintain consistent aspect ratio */
       }
     }
   </style>
@@ -107,8 +106,19 @@
     let brickOffsetTop = 30;
     let brickOffsetLeft;
     const maxBalls = 80;
-    const gravity = 0.1;
-    const acceleration = 1.001;
+
+    // Canvas size
+    function resizeCanvas() {
+      canvas.width = Math.min(window.innerWidth * 0.9, 800);
+      canvas.height = Math.min(window.innerHeight * 0.7, 600);
+      brickOffsetLeft = (canvas.width - (brickColumnCount * (brickWidth + brickPadding) - brickPadding)) / 2;
+      paddle.x = canvas.width / 2 - paddle.width / 2;
+      paddle.y = canvas.height - 20;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    // Other game variables
     let balls = [];
     let bricks = [];
     let score = 0;
@@ -116,41 +126,10 @@
     let lives = 3;
     let isPaused = false;
     let isGameOver = false;
+    const gravity = 0.1;
+    const acceleration = 1.001;
     let powerUp = null;
     let powerUpTimer = null;
-    let lastTime = performance.now();
-
-    // Canvas size
-    function resizeCanvas() {
-      const aspectRatio = 4 / 3; // Maintain 4:3 aspect ratio
-      const maxWidth = Math.min(window.innerWidth * 0.9, 800);
-      const maxHeight = Math.min(window.innerHeight * 0.7, 600);
-      canvas.width = maxWidth;
-      canvas.height = maxWidth / aspectRatio;
-      if (canvas.height > maxHeight) {
-        canvas.height = maxHeight;
-        canvas.width = maxHeight * aspectRatio;
-      }
-      brickOffsetLeft = (canvas.width - (brickColumnCount * (brickWidth + brickPadding) - brickPadding)) / 2;
-      paddle.x = canvas.width / 2 - paddle.width / 2;
-      paddle.y = canvas.height - 20;
-      // Scale game elements for canvas size
-      brickWidth = canvas.width / 10;
-      brickHeight = canvas.height / 30;
-      brickPadding = canvas.width / 80;
-      brickOffsetTop = canvas.height / 20;
-      paddle.width = canvas.width / 6.67;
-      paddle.defaultWidth = paddle.width;
-      paddle.height = canvas.height / 60;
-      paddle.speed = canvas.width / 80;
-      balls.forEach(ball => {
-        ball.radius = canvas.width / 80;
-        ball.x = Math.min(ball.x, canvas.width - ball.radius);
-        ball.y = Math.min(ball.y, canvas.height - ball.radius);
-      });
-    }
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
 
     // Touch controls
     let touchX = null;
@@ -162,7 +141,7 @@
       e.preventDefault();
       const newTouchX = e.touches[0].clientX;
       const deltaX = newTouchX - touchX;
-      paddle.x += deltaX * (window.innerWidth < 600 ? 0.5 : 0.12); // Increased sensitivity for mobile
+      paddle.x += deltaX * 0.12;
       touchX = newTouchX;
       paddle.x = Math.max(0, Math.min(canvas.width - paddle.width, paddle.x));
     });
@@ -263,7 +242,7 @@
             if (distance <= ball.radius) {
               const overlapX = Math.abs(distanceX);
               const overlapY = Math.abs(distanceY);
-              if (overlapX > overlapY) {
+              if (overlapX > overlapY) { // Fixed typo: overlayX -> overlapX
                 ball.dx = -ball.dx;
               } else {
                 ball.dy = -ball.dy;
@@ -274,11 +253,11 @@
               playSound('brickHit');
               if (!powerUp && Math.random() < 0.1) {
                 powerUp = {
-                  x: b.x + brickWidth / 2 - canvas.width / 26.67,
+                  x: b.x + brickWidth / 2 - 15,
                   y: b.y + brickHeight,
-                  width: canvas.width / 26.67,
-                  height: canvas.height / 40,
-                  dy: canvas.height / 300
+                  width: 30,
+                  height: 15,
+                  dy: 2
                 };
               }
               if (score === brickRowCount * brickColumnCount * 10 * level) {
@@ -292,16 +271,16 @@
     }
 
     // Power-up logic
-    function movePowerUp(deltaTime) {
+    function movePowerUp() {
       if (!powerUp) return;
-      powerUp.y += powerUp.dy * deltaTime * 60; // Normalize with deltaTime
+      powerUp.y += powerUp.dy;
       if (
         powerUp.y + powerUp.height > paddle.y &&
         powerUp.y < paddle.y + paddle.height &&
         powerUp.x + powerUp.width > paddle.x &&
         powerUp.x < paddle.x + paddle.width
       ) {
-        paddle.width += canvas.width / 16; // Scale power-up effect
+        paddle.width += 50;
         clearTimeout(powerUpTimer);
         powerUpTimer = setTimeout(() => {
           paddle.width = paddle.defaultWidth;
@@ -331,14 +310,14 @@
     }
 
     // Game logic
-    function moveBalls(deltaTime) {
+    function moveBalls() {
       for (let i = balls.length - 1; i >= 0; i--) {
         let ball = balls[i];
-        ball.dy += gravity * deltaTime * 60; // Normalize gravity
-        ball.dx *= Math.pow(acceleration, deltaTime * 60); // Normalize acceleration
-        ball.dy *= Math.pow(acceleration, deltaTime * 60);
+        ball.dy += gravity;
+        ball.dx *= acceleration;
+        ball.dy *= acceleration;
 
-        const maxSpeed = (10 + level * 2) * canvas.width / 800; // Scale speed
+        const maxSpeed = 10 + level * 2;
         const speed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
         if (speed > maxSpeed) {
           const scale = maxSpeed / speed;
@@ -346,8 +325,8 @@
           ball.dy *= scale;
         }
 
-        ball.x += ball.dx * deltaTime * 60;
-        ball.y += ball.dy * deltaTime * 60;
+        ball.x += ball.dx;
+        ball.y += ball.dy;
 
         if (ball.x + ball.radius > canvas.width) {
           ball.x = canvas.width - ball.radius;
@@ -371,15 +350,15 @@
           ball.x - ball.radius < paddle.x + paddle.width
         ) {
           const hitPoint = (ball.x - (paddle.x + paddle.width / 2)) / (paddle.width / 2);
-          ball.dx = 6 * hitPoint * canvas.width / 800;
-          ball.dy = -8 * (level / 2 + 1) * canvas.width / 800;
+          ball.dx = 6 * hitPoint;
+          ball.dy = -8 * (level / 2 + 1);
           playSound('brickHit');
           if (balls.length < maxBalls) {
             const newBall = {
               x: ball.x,
               y: ball.y,
-              dx: -ball.dx * 0.8 + (Math.random() * 2 - 1) * canvas.width / 800,
-              dy: ball.dy * 0.8 + (Math.random() * 2 - 1) * canvas.width / 800,
+              dx: -ball.dx * 0.8 + Math.random() * 2 - 1,
+              dy: ball.dy * 0.8 + Math.random() * 2 - 1,
               radius: ball.radius
             };
             balls.push(newBall);
@@ -407,7 +386,6 @@
       } else if (leftPressed && paddle.x > 0) {
         paddle.x -= paddle.speed;
       }
-      paddle.x = Math.max(0, Math.min(canvas.width - paddle.width, paddle.x));
     }
 
     function levelUp() {
@@ -425,9 +403,9 @@
       balls = [{
         x: canvas.width / 2,
         y: canvas.height - 50,
-        dx: 4 * (level / 2 + 1) * canvas.width / 800,
-        dy: -6 * (level / 2 + 1) * canvas.width / 800,
-        radius: canvas.width / 80
+        dx: 4 * (level / 2 + 1),
+        dy: -6 * (level / 2 + 1),
+        radius: 10
       }];
       paddle.x = canvas.width / 2 - paddle.width / 2;
       ballCountDisplay.textContent = balls.length;
@@ -438,10 +416,10 @@
       ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.fillStyle = '#fff';
-      ctx.font = `${canvas.width / 26.67}px Arial`;
+      ctx.font = '30px Arial';
       ctx.textAlign = 'center';
       ctx.fillText('게임 오버', canvas.width / 2, canvas.height / 2);
-      ctx.fillText(`최종 점수: ${score}`, canvas.width / 2, canvas.height / 2 + canvas.width / 20);
+      ctx.fillText(`최종 점수: ${score}`, canvas.width / 2, canvas.height / 2 + 40);
       pauseMenu.style.display = 'block';
     }
 
@@ -453,7 +431,6 @@
     function resumeGame() {
       isPaused = false;
       pauseMenu.style.display = 'none';
-      lastTime = performance.now();
       gameLoop();
     }
 
@@ -473,20 +450,15 @@
       powerUp = null;
       resetBalls();
       createBricks();
-      lastTime = performance.now();
       gameLoop();
     }
 
     // Game loop
     function gameLoop() {
       if (!isPaused && !isGameOver) {
-        const currentTime = performance.now();
-        const deltaTime = (currentTime - lastTime) / 1000; // Seconds
-        lastTime = currentTime;
-
         movePaddle();
-        moveBalls(deltaTime);
-        movePowerUp(deltaTime);
+        moveBalls();
+        movePowerUp();
         balls.forEach((ball, index) => collisionDetection(ball, index));
         draw();
         requestAnimationFrame(gameLoop);
