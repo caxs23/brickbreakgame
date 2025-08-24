@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+Put your HTML text here<!DOCTYPE html>
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
@@ -101,8 +101,8 @@
       speed: 20,
       defaultWidth: 150
     };
-    let brickRowCount = 5;
-    let brickColumnCount = 9;
+    let brickRowCount = 10;
+    let brickColumnCount = 22;
     let brickWidth = 80;
     let brickHeight = 20;
     let brickPadding = 10;
@@ -138,8 +138,8 @@
       brickOffsetLeft = (canvas.width - (brickColumnCount * (brickWidth + brickPadding) - brickPadding)) / 2;
       paddle.x = canvas.width / 2 - paddle.width / 2;
       paddle.y = canvas.height - (window.innerWidth <= 600 ? 60 : 40);
-      brickWidth = canvas.width / 10;
-      brickHeight = canvas.height / 30;
+      brickWidth = canvas.width / 35;
+      brickHeight = canvas.height / 50;
       brickPadding = canvas.width / 80;
       brickOffsetTop = canvas.height / 15;
       paddle.width = canvas.width / 5; // 패들 너비 증가 (기존: 1/6.67)
