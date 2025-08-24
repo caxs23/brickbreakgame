@@ -479,8 +479,22 @@
     }
 
     function gameWon() {
-      isGameWon = true;
-    }
+    isGameWon = true;
+    pauseMenu.style.display = 'block';
+
+    // 일시정지 메뉴의 내용을 승리 메시지로 변경
+    const menuTitle = pauseMenu.querySelector('h2');
+    menuTitle.textContent = '승리!';
+
+    const continueButton = pauseMenu.querySelector('button:nth-of-type(1)');
+    continueButton.style.display = 'none'; // '계속하기' 버튼 숨기기
+
+    const restartButton = pauseMenu.querySelector('button:nth-of-type(2)');
+    restartButton.style.display = 'block'; // '다시 시작' 버튼 표시
+
+    const spacebarButton = pauseMenu.querySelector('button:nth-of-type(3)');
+    spacebarButton.style.display = 'none'; // '계속하기(스페이스바)' 버튼 숨기기
+}
 
     function togglePause() {
       if (isGameWon || waitingForRestart) return;
