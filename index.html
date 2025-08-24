@@ -165,7 +165,7 @@
       e.preventDefault();
       const newTouchX = e.touches[0].clientX;
       const deltaX = newTouchX - touchX;
-      paddle.x += deltaX * (window.innerWidth < 600 ? 0.5 : 0.1);
+      paddle.x += deltaX * (window.innerWidth < 600 ? 0.8 : 0.16);
       touchX = newTouchX;
       paddle.x = Math.max(0, Math.min(canvas.width - paddle.width, paddle.x));
     });
