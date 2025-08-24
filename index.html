@@ -101,9 +101,9 @@
       speed: 20,
       defaultWidth: 150
     };
-    let brickRowCount = 5;
-    let brickColumnCount = 9;
-    let brickWidth = 80;
+    let brickRowCount = 6;
+    let brickColumnCount = 15;
+    let brickWidth = 40;
     let brickHeight = 20;
     let brickPadding = 10;
     let brickOffsetTop = 30;
@@ -137,9 +137,9 @@
       }
       brickOffsetLeft = (canvas.width - (brickColumnCount * (brickWidth + brickPadding) - brickPadding)) / 2;
       paddle.x = canvas.width / 2 - paddle.width / 2;
-      paddle.y = canvas.height - (window.innerWidth <= 600 ? 30 : 20);
-      brickWidth = canvas.width / 10;
-      brickHeight = canvas.height / 30;
+      paddle.y = canvas.height - (window.innerWidth <= 600 ? 50 : 40);
+      brickWidth = canvas.width / 20;
+      brickHeight = canvas.height / 40;
       brickPadding = canvas.width / 80;
       brickOffsetTop = canvas.height / 15;
       paddle.width = canvas.width / 5; // 패들 너비 증가 (기존: 1/6.67)
